@@ -1,0 +1,90 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+      {
+        "type": "java",
+        "name": "App",
+        "request": "launch",
+        "mainClass": "App",
+        "projectName": "Termo_2SemLP1_c76c7030"
+      },
+      {
+        "type": "java",
+        "name": "Servidor",
+        "request": "launch",
+        "mainClass": "Servidor",
+        "projectName": "Termo_2SemLP1_c76c7030"
+      },
+      {
+        "type": "java",
+        "name": "App",
+        "request": "launch",
+        "mainClass": "App",
+        "projectName": "Termo_2SemLP1_b0d9160a"
+      },
+      {
+        "type": "java",
+        "name": "Cliente",
+        "request": "launch",
+        "mainClass": "Cliente",
+        "projectName": "Termo_2SemLP1_b0d9160a"
+      },
+      {
+        "type": "java",
+        "name": "Servidor",
+        "request": "launch",
+        "mainClass": "Servidor",
+        "projectName": "Termo_2SemLP1_b0d9160a"
+      },
+      {
+        "type": "java",
+        "name": "App",
+        "request": "launch",
+        "mainClass": "App",
+        "projectName": "Termo-LP1_8325cde5"
+      },
+      {
+        "type": "java",
+        "name": "DBManagement",
+        "request": "launch",
+        "mainClass": "helpers.DBManagement",
+        "projectName": "Termo-LP1_8325cde5"
+      },
+      {
+        "type": "java",
+        "name": "DBManagement",
+        "request": "launch",
+        "mainClass": "helpers.DBManagement",
+        "projectName": "Termo-LP1_964897ee"
+      },
+      {
+        "type": "java",
+        "name": "App",
+        "request": "launch",
+        "mainClass": "App",
+        "projectName": "Termo-LP1_964897ee"
+      },
+      {
+        "type": "java",
+        "name": "DBManagement",
+        "request": "launch",
+        "mainClass": "helpers.DBManagement",
+        "projectName": "Termo-LP1_5c28c702"
+      },
+      {
+        "type": "java",
+        "name": "App",
+        "request": "launch",
+        "mainClass": "App",
+        "projectName": "Termo-LP1_5c28c702"
+      },
+      {
+        "type": "java",
+        "name": "Launch Main",
+        "request": "launch",
+        "mainClass": "Main",
+        "vmArgs": "-classpath lib/mysql-connector-java-8.4.0.jar:bin"
+      }
+    ]
+  }
+  
