@@ -20,8 +20,8 @@ public class ConnectionDB {
     public static final String server = "localhost";
     public static final String port = "3306";
     public static final String database = "projeto-semestral";
-    public static final String user = "root";
-    public static final String password = "gatafiona21";
+    public static final String user = "user-termo";
+    public static final String password = "termooo";
 
     public Connection connect() throws SQLException {
 
