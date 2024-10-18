@@ -19,7 +19,7 @@ public class ConnectionDB {
 
     public static final String server = "localhost";
     public static final String port = "3306";
-    public static final String database = "projeto-semestral";
+    public static final String database = "Termooo";
     public static final String user = "user-termo";
     public static final String password = "termooo";
 
@@ -41,47 +41,84 @@ public class ConnectionDB {
     public void setDatabase() throws SQLException {
 
         System.out.println("Chamou a função setDatabase()");
-
+    
         java.sql.Connection setupConnection = null;
-
+    
         String driver_URL = "jdbc:mysql://" + server + ":" + port + "/";
-
+    
         String createDatabase = "CREATE DATABASE IF NOT EXISTS " + database;
         String useDatabase = "USE " + database;
-        String createTable = "CREATE TABLE IF NOT EXISTS dicionario (palavra VARCHAR(6))";
 
+        String createDict = "CREATE TABLE IF NOT EXISTS dicionario (palavra VARCHAR(6))";
+
+        String createUserReg = "CREATE TABLE IF NOT EXISTS user_register (" +
+                               "id INT(5) NOT NULL AUTO_INCREMENT PRIMARY KEY," +
+                               "usuario VARCHAR(255) NOT NULL," +
+                               "senha VARCHAR(255) NOT NULL)";
+    
+        String createLogReg = "CREATE TABLE IF NOT EXISTS logs (" +
+                              "log_id INT NOT NULL AUTO_INCREMENT PRIMARY KEY," +
+                              "id_usuario INT," +
+                              "horario TIMESTAMP DEFAULT CURRENT_TIMESTAMP," +
+                              "palavra VARCHAR(6)," +
+                              "tentativas INT," +
+                              "FOREIGN KEY (id_usuario) REFERENCES user_register(id))";
+    
+        String createLeaderboard = "CREATE TABLE IF NOT EXISTS leaderboard (" +
+                                   "leaderboard_id INT NOT NULL AUTO_INCREMENT PRIMARY KEY," +
+                                   "palavra VARCHAR(6)," +
+                                   "tentativas INT," +
+                                   "usuario VARCHAR(255))";
+    
         PreparedStatement createDBStmt = null;
-
         PreparedStatement useStmt = null;
-
-        PreparedStatement createTableStmt = null;
-
+        PreparedStatement createDictStmt = null;
+        PreparedStatement createUserRegStmt = null;
+        PreparedStatement createLogRegStmt = null;
+        PreparedStatement createLeaderboardStmt = null;
+    
         try {
-
             Class.forName(driver);
             System.out.println("Conseguiu conectar - Criação do database");
-
+    
             setupConnection = DriverManager.getConnection(driver_URL, user, password);
-
+    
             createDBStmt = setupConnection.prepareStatement(createDatabase);
             useStmt = setupConnection.prepareStatement(useDatabase);
-            createTableStmt = setupConnection.prepareStatement(createTable);
-
+            createDictStmt = setupConnection.prepareStatement(createDict);
+            createUserRegStmt = setupConnection.prepareStatement(createUserReg);
+            createLogRegStmt = setupConnection.prepareStatement(createLogReg);
+            createLeaderboardStmt = setupConnection.prepareStatement(createLeaderboard);
+    
+            // Criando o banco de dados
             createDBStmt.executeUpdate();
             System.out.println("Executou a query de criação do db");
-
+    
+            // Usando o banco de dados
             useStmt.executeUpdate();
             System.out.println("Executou a query de uso do db");
-
-            createTableStmt.executeUpdate();
-            System.out.println("Executou a query de criação da tabela");
-
+    
+            // Criando a tabela dicionário
+            createDictStmt.executeUpdate();
+            System.out.println("Executou a query de criação da tabela dicionário");
+    
+            // Criando a tabela de registros de usuários
+            createUserRegStmt.executeUpdate();
+            System.out.println("Executou a query de criação da tabela user_register");
+    
+            // Criando a tabela de logs
+            createLogRegStmt.executeUpdate();
+            System.out.println("Executou a query de criação da tabela logs");
+    
+            // Criando a tabela de leaderboard
+            createLeaderboardStmt.executeUpdate();
+            System.out.println("Executou a query de criação da tabela leaderboard");
+    
         } catch (ClassNotFoundException e) {
             throw new RuntimeException(error_msg + e);
         }
-
+    
         setupConnection.close();
-
     }
 
     public static void disconect(Connection conn) throws SQLException {

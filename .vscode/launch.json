@@ -3,6 +3,13 @@
     "configurations": [
       {
         "type": "java",
+        "name": "DBManagement",
+        "request": "launch",
+        "mainClass": "helpers.DBManagement",
+        "projectName": "Termo_2SemLP1_c76c7030"
+      },
+      {
+        "type": "java",
         "name": "App",
         "request": "launch",
         "mainClass": "App",
