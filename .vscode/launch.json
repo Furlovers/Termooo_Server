@@ -3,6 +3,41 @@
     "configurations": [
       {
         "type": "java",
+        "name": "Cliente",
+        "request": "launch",
+        "mainClass": "Cliente",
+        "projectName": "Termooo_Server_fef42f7b"
+      },
+      {
+        "type": "java",
+        "name": "LoginScreen",
+        "request": "launch",
+        "mainClass": "ui.LoginScreen",
+        "projectName": "Termooo_Server_fef42f7b"
+      },
+      {
+        "type": "java",
+        "name": "DBManagement",
+        "request": "launch",
+        "mainClass": "helpers.DBManagement",
+        "projectName": "Termooo_Server_fef42f7b"
+      },
+      {
+        "type": "java",
+        "name": "Servidor",
+        "request": "launch",
+        "mainClass": "Servidor",
+        "projectName": "Termooo_Server_fef42f7b"
+      },
+      {
+        "type": "java",
+        "name": "App",
+        "request": "launch",
+        "mainClass": "App",
+        "projectName": "Termooo_Server_fef42f7b"
+      },
+      {
+        "type": "java",
         "name": "DBManagement",
         "request": "launch",
         "mainClass": "helpers.DBManagement",

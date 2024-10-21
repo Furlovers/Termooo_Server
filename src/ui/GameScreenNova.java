@@ -1,11 +1,5 @@
 package ui;
 
-import javax.swing.JOptionPane;
-import javax.swing.BorderFactory;
-import javax.swing.BoxLayout;
-import javax.swing.JButton;
-import javax.swing.JLabel;
-import javax.swing.JPanel;
 import entities.Letter;
 import entities.Square;
 import helpers.StateEnum;
@@ -21,13 +15,18 @@ import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.io.BufferedReader;
-import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
+import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.Socket;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import javax.swing.BorderFactory;
+import javax.swing.BoxLayout;
+import javax.swing.JButton;
+import javax.swing.JDialog;
+import javax.swing.JLabel;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
 
 public class GameScreenNova extends JPanel implements KeyListener, ActionListener {
 
@@ -40,6 +39,7 @@ public class GameScreenNova extends JPanel implements KeyListener, ActionListene
     private boolean canWrite = true;
     private boolean win = false;
     private JButton submitButton;
+    private JDialog dialog; // Agora armazenamos o diálogo para fechá-lo quando necessário
 
     private List<List<Letter>> words = Arrays.asList(
             Arrays.asList(new Letter(' '), new Letter(' '), new Letter(' '), new Letter(' '), new Letter(' ')),
@@ -47,8 +47,7 @@ public class GameScreenNova extends JPanel implements KeyListener, ActionListene
             Arrays.asList(new Letter(' '), new Letter(' '), new Letter(' '), new Letter(' '), new Letter(' ')),
             Arrays.asList(new Letter(' '), new Letter(' '), new Letter(' '), new Letter(' '), new Letter(' ')),
             Arrays.asList(new Letter(' '), new Letter(' '), new Letter(' '), new Letter(' '), new Letter(' ')),
-            Arrays.asList(new Letter(' '), new Letter(' '), new Letter(' '), new Letter(' '), new Letter(' '))
-    );
+            Arrays.asList(new Letter(' '), new Letter(' '), new Letter(' '), new Letter(' '), new Letter(' ')));
 
     private List<Letter> letters = Arrays.asList(new Letter('A'), new Letter('B'), new Letter('C'), new Letter('D'),
             new Letter('E'), new Letter('F'), new Letter('G'), new Letter('H'), new Letter('I'), new Letter('J'),
@@ -56,33 +55,25 @@ public class GameScreenNova extends JPanel implements KeyListener, ActionListene
             new Letter('Q'), new Letter('R'), new Letter('S'), new Letter('T'), new Letter('U'), new Letter('V'),
             new Letter('W'), new Letter('X'), new Letter('Y'), new Letter('Z'));
 
-    public GameScreenNova() {
+    public GameScreenNova(Socket socket, BufferedReader in, PrintWriter out) {
+        this.socket = socket;
+        this.in = in;
+        this.out = out;
+
+        setBackground(Color.DARK_GRAY);
         setLayout(null);
         drawButton();
         setFocusable(true);
         addKeyListener(this);
-        connectToServer(); // Estabelece a conexão com o servidor ao inicializar
-    }
-
-    private void connectToServer() {
-        try {
-            socket = new Socket("localhost", 3305);
-            in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-            out = new PrintWriter(new OutputStreamWriter(socket.getOutputStream()), true);
-            System.out.println("Conectado ao servidor");
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
     }
 
     @Override
     public void paintComponent(Graphics g) {
-
         super.paintComponent(g);
-        
         g.setFont(new Font("Arial", Font.BOLD, 40));
         drawLetters(g);
 
+        // Desenhando a grade do jogo
         for (int i = 0; i < words.size(); i++) {
             List<Letter> currentWord = words.get(i);
             for (int j = 0; j < currentWord.size(); j++) {
@@ -97,51 +88,94 @@ public class GameScreenNova extends JPanel implements KeyListener, ActionListene
             canWrite = true;
             submitButton.setFocusable(false);
 
+            // Pegando a palavra adivinhada
             StringBuilder guessedWord = new StringBuilder();
             for (Letter letter : words.get(wordIndex - 1)) {
                 guessedWord.append(letter.getLetter());
             }
 
-            out.println(guessedWord.toString()); // Envia a palavra ao servidor
-            receiveServerResponse(); // Recebe o feedback do servidor
+            // Envia a palavra ao servidor
+            out.println("GUESS:" + guessedWord.toString());
+            System.out.println("Enviou guess");
 
-            // Após a tentativa, incrementa o wordIndex para a próxima linha do tabuleiro
-            wordIndex++;
-            squareIndex = (wordIndex - 1) * 5; // Reinicia o squareIndex para o início da nova linha
+            // Recebe o feedback do servidor
+            receiveServerResponse();
+
+            // Verifica se o jogador venceu ou esgotou as tentativas
+            if (win) {
+                showFinalDialog("Parabéns, você acertou!", "Vitória", JOptionPane.INFORMATION_MESSAGE);
+            } else if (wordIndex == 6) { // O jogador usou todas as 6 tentativas
+                showFinalDialog("Que pena, você não acertou! ", "Derrota", JOptionPane.ERROR_MESSAGE);
+            } else {
+                // Continua para a próxima linha
+                wordIndex++;
+                squareIndex = (wordIndex - 1) * 5; // Reinicia o squareIndex para o início da nova linha
+            }
         }
     }
 
     private void receiveServerResponse() {
         try {
+            // Verificar se o socket está fechado antes de tentar ler
+            if (socket.isClosed()) {
+                System.out.println("Conexão foi fechada pelo servidor.");
+                return;
+            }
+
+            // Lendo a resposta do servidor
+            System.out.println("Esperando resposta do servidor...");
             String response = in.readLine();
+
+            // Verifique se a resposta foi recebida ou se a conexão foi fechada
+            if (response == null) {
+                System.out.println("Conexão foi fechada pelo servidor ou não houve resposta.");
+                return;
+            }
+
             System.out.println("Resposta do servidor: " + response);
-    
+
             // Processa a resposta do servidor, que contém as letras e seus estados
             updateLettersWithResponse(response);
-    
+
+            // Verifica se o jogador acertou a palavra
+            win = checkIfWin();
+
             // Redesenha a tela com o novo estado das letras
             repaint();
-        } catch (Exception e) {
+        } catch (IOException e) {
             e.printStackTrace();
         }
     }
-    
+
     private void updateLettersWithResponse(String response) {
-        // Exemplo de resposta: "A:DISCOVERED_AND_RIGHT,B:WRONG,C:DISCOVERED_AND_WRONG,D:WRONG,E:DISCOVERED_AND_RIGHT"
+        // Exemplo de resposta:
+        // "A:DISCOVERED_AND_RIGHT,B:WRONG,C:DISCOVERED_AND_WRONG,D:WRONG,E:DISCOVERED_AND_RIGHT"
         String[] letterStates = response.split(",");
-        
+
         List<Letter> currentWord = words.get(wordIndex - 1);
-        
+        System.out.println(letterStates);
+
         for (int i = 0; i < letterStates.length; i++) {
             String[] parts = letterStates[i].split(":");
             char letterChar = parts[0].charAt(0);
             String stateString = parts[1];
-            
+
             // Atualiza a letra e seu estado com base na resposta do servidor
             Letter letter = currentWord.get(i);
             letter.setLetter(letterChar);
             letter.setState(StateEnum.valueOf(stateString));
         }
+    }
+
+    // Método para verificar se o jogador venceu
+    private boolean checkIfWin() {
+        List<Letter> currentWord = words.get(wordIndex - 1);
+        for (Letter letter : currentWord) {
+            if (letter.getStatesEnum() != StateEnum.DISCOVERED_AND_RIGHT) {
+                return false; // Se alguma letra não está correta, o jogador ainda não venceu
+            }
+        }
+        return true; // Todas as letras estão corretas
     }
 
     @Override
@@ -161,14 +195,17 @@ public class GameScreenNova extends JPanel implements KeyListener, ActionListene
                 canWrite = true; // Permitir que o jogador continue escrevendo após apagar
                 repaint();
             }
-        } 
-        // Certifica-se de que apenas letras são processadas e que o jogador pode escrever
+        }
+        // Certifica-se de que apenas letras são processadas e que o jogador pode
+        // escrever
         else if (Character.isLetter(typedChar) && canWrite) {
-            // Atualiza a letra na posição correta da linha atual (determinado por wordIndex)
+            // Atualiza a letra na posição correta da linha atual (determinado por
+            // wordIndex)
             words.get(wordIndex - 1).get(squareIndex % 5).setLetter(Character.toUpperCase(typedChar));
             squareIndex++;
 
-            // Quando o jogador completar uma palavra (5 letras), ele não pode mais escrever até submeter
+            // Quando o jogador completar uma palavra (5 letras), ele não pode mais escrever
+            // até submeter
             if (squareIndex % 5 == 0) {
                 canWrite = false;
             }
@@ -177,21 +214,21 @@ public class GameScreenNova extends JPanel implements KeyListener, ActionListene
     }
 
     @Override
-    public void keyPressed(KeyEvent e) { }
+    public void keyPressed(KeyEvent e) {
+    }
+
     @Override
-    public void keyReleased(KeyEvent e) { }
+    public void keyReleased(KeyEvent e) {
+    }
 
     private Square getSquare(int index) {
         int panelWidth = getWidth();
         int panelHeight = getHeight();
-
         int gridWidth = 5;
         int gridHeight = 6;
         int cellSpacing = 8;
-
         int gridTotalWidth = gridWidth * cellSize + (gridWidth - 1) * cellSpacing;
         int gridTotalHeight = gridHeight * cellSize + (gridHeight - 1) * cellSpacing;
-
         int startX = (panelWidth - gridTotalWidth) / 2;
         int startY = (panelHeight - gridTotalHeight) / 3;
 
@@ -253,21 +290,7 @@ public class GameScreenNova extends JPanel implements KeyListener, ActionListene
         add(submitButton);
     }
 
-
     public void drawLetters(Graphics g) {
-
-        /*
-         * Imprime uma letra em um quadrado do
-         * tabuleiro do jogo a partir do atributo 'letter'
-         * do objeto "Letter". É aplicada uma formatação
-         * condicional para a cor do quadrado do tabuleiro
-         * em função do atributo 'state' do objeto "Letter".
-         * 
-         * Ademais, posiciona-se adequadamente cada letra
-         * nos quadrados do tabuleiro a partir da linha e coluna
-         * de cada letra, definidos através de seu índice.
-         */
-
         super.paintComponent(g);
         int startX = 40;
         int startY = 60;
@@ -293,6 +316,26 @@ public class GameScreenNova extends JPanel implements KeyListener, ActionListene
             int yPos = startY + row * spacingY;
             g.drawString(letter.getLetter() + "", xPos, yPos);
         });
-
     }
+
+    private void showFinalDialog(String message, String title, int messageType) {
+        JPanel panel = new JPanel();
+        panel.setBackground(Color.WHITE);
+        panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
+
+        JLabel label = new JLabel(message);
+        label.setFont(new Font("Arial", Font.BOLD, 18));
+        label.setForeground(Color.BLACK);
+        label.setAlignmentX(Component.CENTER_ALIGNMENT);
+        panel.add(label);
+
+        // Botão para reiniciar o jogo
+        // Cria um JDialog sem o botão "OK"
+        JOptionPane optionPane = new JOptionPane(panel, messageType, JOptionPane.DEFAULT_OPTION, null, new Object[] {},
+                null);
+        dialog = optionPane.createDialog(this, title); // Armazena o diálogo
+        dialog.setModal(true);
+        dialog.setVisible(true);
+    }
+
 }

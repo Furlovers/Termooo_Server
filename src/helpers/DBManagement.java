@@ -8,7 +8,6 @@ import java.util.Arrays;
 public class DBManagement {
 
     Connection conn = null;
-    
 
     public static void main(String[] args) {
         Connection conn = null;
