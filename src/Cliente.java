@@ -1,5 +1,4 @@
 import javax.swing.JFrame;
-import ui.LoginScreen;
 
 public class Cliente extends JFrame {
 

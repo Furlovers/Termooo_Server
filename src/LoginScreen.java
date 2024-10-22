@@ -1,11 +1,11 @@
-package ui;
-
 import java.awt.*;
 import java.awt.event.*;
 import java.io.*;
 import java.net.*;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.Locale;
+import java.util.ResourceBundle;
 import javax.swing.*;
 
 public class LoginScreen extends JFrame {
@@ -13,28 +13,51 @@ public class LoginScreen extends JFrame {
     private JPasswordField passwordField;
     private JButton loginButton;
     private JLabel statusLabel;
+    private JComboBox<String> languageSelector;
 
     private Socket socket;
     private BufferedReader in;
     private PrintWriter out;
+    private ResourceBundle messages;
+
+    private Locale selectedLocale;
 
     public LoginScreen() {
         setTitle("Login");
-        setLayout(new GridBagLayout()); // Usando GridBagLayout para melhor controle de layout
+
+        // Usando GridBagLayout para melhor controle de layout
+        setLayout(new GridBagLayout());
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.fill = GridBagConstraints.HORIZONTAL;
 
         // Configurando o fundo e as cores
         getContentPane().setBackground(Color.DARK_GRAY);
 
-        // Campo de usuário
-        JLabel usernameLabel = new JLabel("Usuário:");
-        usernameLabel.setForeground(Color.WHITE); // Fonte branca
-        usernameLabel.setFont(new Font("Arial", Font.BOLD, 20));
+        // Adicionando o seletor de idioma
+        String[] languages = { "Português", "English", "Español", "Français", "Deutsch" };
+        languageSelector = new JComboBox<>(languages);
+        languageSelector.setFont(new Font("Arial", Font.PLAIN, 16));
+        languageSelector.setSelectedIndex(0); // Português como padrão
+        languageSelector.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                updateLocale(languageSelector.getSelectedIndex());
+                updateLabels();
+            }
+        });
         gbc.gridx = 0;
         gbc.gridy = 0;
-        gbc.insets = new Insets(10, 10, 10, 10); // Espaçamento
-        gbc.anchor = GridBagConstraints.CENTER;
+        gbc.gridwidth = 2;
+        gbc.insets = new Insets(10, 10, 20, 10); // Mais espaçamento embaixo do seletor de idiomas
+        add(languageSelector, gbc);
+
+        // Campo de usuário
+        JLabel usernameLabel = new JLabel();
+        usernameLabel.setForeground(Color.WHITE);
+        usernameLabel.setFont(new Font("Arial", Font.BOLD, 20));
+        gbc.insets = new Insets(5, 10, 5, 10); // Espaçamento entre os elementos
+        gbc.gridwidth = 1;
+        gbc.gridy = 1;
         add(usernameLabel, gbc);
 
         usernameField = new JTextField(15);
@@ -43,11 +66,11 @@ public class LoginScreen extends JFrame {
         add(usernameField, gbc);
 
         // Campo de senha
-        JLabel passwordLabel = new JLabel("Senha:");
+        JLabel passwordLabel = new JLabel();
         passwordLabel.setForeground(Color.WHITE);
         passwordLabel.setFont(new Font("Arial", Font.BOLD, 20));
         gbc.gridx = 0;
-        gbc.gridy = 1;
+        gbc.gridy = 2;
         add(passwordLabel, gbc);
 
         passwordField = new JPasswordField(15);
@@ -56,24 +79,25 @@ public class LoginScreen extends JFrame {
         add(passwordField, gbc);
 
         // Botão de Login
-        loginButton = new JButton("Login");
+        loginButton = new JButton();
         loginButton.setFont(new Font("Arial", Font.BOLD, 20));
         loginButton.setBackground(Color.BLACK);
         loginButton.setForeground(Color.WHITE);
         loginButton.setFocusPainted(false);
         gbc.gridx = 1;
-        gbc.gridy = 2;
+        gbc.gridy = 3;
         gbc.gridwidth = 2;
-        gbc.anchor = GridBagConstraints.CENTER;
+        gbc.insets = new Insets(15, 10, 10, 10); // Espaçamento maior embaixo do botão de login
         add(loginButton, gbc);
 
         // Status do login
-        statusLabel = new JLabel("Entre com suas credenciais", JLabel.CENTER);
+        statusLabel = new JLabel("", JLabel.CENTER);
         statusLabel.setForeground(Color.WHITE);
-        statusLabel.setFont(new Font("Arial", Font.PLAIN, 18));
+        statusLabel.setFont(new Font("Arial", Font.PLAIN, 18)); // Aumenta o tamanho da fonte da mensagem de status
         gbc.gridx = 0;
-        gbc.gridy = 3;
+        gbc.gridy = 4;
         gbc.gridwidth = 2;
+        gbc.insets = new Insets(10, 10, 10, 10);
         add(statusLabel, gbc);
 
         // Ação do botão de login
@@ -92,10 +116,10 @@ public class LoginScreen extends JFrame {
                     String response = in.readLine();
 
                     if (response.equals("SUCCESS")) {
-                        statusLabel.setText("Login bem-sucedido!");
+                        statusLabel.setText(messages.getString("login.success"));
                         openGameScreen(socket, in, out);
                     } else {
-                        statusLabel.setText("Falha no login. Tente novamente.");
+                        statusLabel.setText(messages.getString("login.failure"));
                     }
 
                 } catch (IOException | NoSuchAlgorithmException ex) {
@@ -105,10 +129,41 @@ public class LoginScreen extends JFrame {
         });
 
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-
-        // Maximiza a janela ao abrir
         setExtendedState(JFrame.MAXIMIZED_BOTH);
         setVisible(true);
+
+        // Inicializar com o idioma padrão
+        updateLocale(0); // Português
+        updateLabels();
+    }
+
+    // Método para atualizar o locale selecionado
+    private void updateLocale(int languageIndex) {
+        switch (languageIndex) {
+            case 0:
+                selectedLocale = Locale.of("pt", "BR");
+                break;
+            case 1:
+                selectedLocale = Locale.of("en", "US");
+                break;
+            case 2:
+                selectedLocale = Locale.of("es", "ES");
+                break;
+            case 3:
+                selectedLocale = Locale.of("fr", "FR");
+                break;
+            case 4:
+                selectedLocale = Locale.of("de", "DE");
+                break;
+        }
+        messages = ResourceBundle.getBundle("messages", selectedLocale);
+    }
+
+    // Atualizar os textos na interface
+    private void updateLabels() {
+        setTitle(messages.getString("login.title"));
+        loginButton.setText(messages.getString("login.button"));
+        statusLabel.setText(messages.getString("login.status"));
     }
 
     private void connectToServer() throws IOException {
@@ -130,14 +185,15 @@ public class LoginScreen extends JFrame {
         return hexString.toString();
     }
 
-    // Método para abrir a tela de jogo usando a conexão existente
+    // Método para abrir a tela de jogo usando a conexão existente e passando o
+    // locale
     private void openGameScreen(Socket socket, BufferedReader in, PrintWriter out) {
         dispose(); // Fecha a tela de login
-        GameScreenNova gameScreen = new GameScreenNova(socket, in, out); // Passa a conexão
+        GameScreenNova gameScreen = new GameScreenNova(socket, in, out, messages); // Passa a conexão e o bundle de
+                                                                                   // mensagens
         JFrame gameFrame = new JFrame();
         gameFrame.add(gameScreen);
 
-        // Configura a janela para tela cheia
         gameFrame.setExtendedState(JFrame.MAXIMIZED_BOTH);
         gameFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         gameFrame.setVisible(true);
